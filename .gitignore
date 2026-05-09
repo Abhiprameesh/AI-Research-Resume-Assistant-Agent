@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual envs
+.venv/
+venv/
+
+# Env files
+.env
+
+# Pytest / coverage
+.pytest_cache/
+htmlcov/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Mypy
+.mypy_cache/
+
+# IDEs / editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Notebook
+.ipynb_checkpoints/
