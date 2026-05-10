@@ -12,6 +12,8 @@ venv/
 # Env files
 .env
 
+learning.doc
+
 # Pytest / coverage
 .pytest_cache/
 htmlcov/

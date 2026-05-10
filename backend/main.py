@@ -4,6 +4,7 @@ import datetime
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import SystemMessage
 
 load_dotenv()
 
@@ -44,42 +45,55 @@ tools = [
 ]
 llm_with_tools = llm.bind_tools(tools)
 
+chat_history = [
+    SystemMessage(
+        content="""
+        You are a helpful AI assistant.
+
+        You must remember previous conversation context
+        and answer based on chat history whenever relevant.
+        """
+    )
+]
+
 while True:
     user_input = input("You: ")
 
     if user_input.lower() == "exit":
         break
 
-    # First response from model
-    response = llm_with_tools.invoke([HumanMessage(content=user_input)])
+    # Add user message to memory
+    chat_history.append(HumanMessage(content=user_input))
 
-    # If model wants to use tools
+    # Invoke model
+    response = llm_with_tools.invoke(chat_history)
+
+    # Add AI response
+    chat_history.append(response)
+
+    # Tool calling
     if response.tool_calls:
-
-        messages = [HumanMessage(content=user_input), response]
 
         for tool_call in response.tool_calls:
 
             tool_name = tool_call["name"]
 
-            # Find matching tool
             selected_tool = next(
                 tool for tool in tools if tool.name == tool_name
             )
 
-            # Execute tool
             tool_result = selected_tool.invoke(tool_call["args"])
 
-            # Add tool result
-            messages.append(
-                ToolMessage(
-                    content=str(tool_result),
-                    tool_call_id=tool_call["id"]
-                )
+            tool_message = ToolMessage(
+                content=str(tool_result),
+                tool_call_id=tool_call["id"]
             )
 
-        # Final AI response
-        final_response = llm_with_tools.invoke(messages)
+            chat_history.append(tool_message)
+
+        final_response = llm_with_tools.invoke(chat_history)
+
+        chat_history.append(final_response)
 
         print("\nAgent:", final_response.content)
 
