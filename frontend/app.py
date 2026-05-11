@@ -9,7 +9,7 @@ st.set_page_config(
 
 st.title("Agentic AI Career Assistant")
 
-# Session state for chat history
+# Store chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -19,21 +19,21 @@ uploaded_file = st.file_uploader(
     type=["pdf"]
 )
 
-# Show previous messages
+# Display previous chat messages
 for message in st.session_state.messages:
 
     with st.chat_message(message["role"]):
 
         st.markdown(message["content"])
 
-# User input
+# Chat input
 user_input = st.chat_input(
     "Ask something..."
 )
 
 if user_input:
 
-    # Store user message
+    # Save user message
     st.session_state.messages.append(
         {
             "role": "user",
@@ -41,8 +41,9 @@ if user_input:
         }
     )
 
-    # Display user message
+    # Show user message
     with st.chat_message("user"):
+
         st.markdown(user_input)
 
     payload = {
@@ -57,11 +58,12 @@ if user_input:
         )
 
         with open(save_path, "wb") as f:
+
             f.write(uploaded_file.getbuffer())
 
         payload["resume_path"] = save_path
 
-    # API request
+    # Send request to backend
     response = requests.post(
         "http://127.0.0.1:8000/chat",
         json=payload
@@ -71,7 +73,7 @@ if user_input:
 
     agent_response = data["response"]
 
-    # Store assistant response
+    # Save assistant message
     st.session_state.messages.append(
         {
             "role": "assistant",
@@ -79,6 +81,7 @@ if user_input:
         }
     )
 
-    # Display assistant response
+    # Show assistant message
     with st.chat_message("assistant"):
+
         st.markdown(agent_response)

@@ -6,6 +6,11 @@ from langchain_core.messages import (
     ToolMessage
 )
 
+from vector_memory import (
+    store_memory,
+    retrieve_memory
+)
+
 from agent import llm_with_tools, tools
 from memory import chat_history
 
@@ -61,13 +66,40 @@ def chat(user_input: UserInput):
 
     try:
 
-        response = llm_with_tools.invoke(chat_history)
+        relevant_memories = retrieve_memory(
+            user_input.message
+    )
+
+        memory_context = "\n".join(
+            relevant_memories
+    )
+
+        chat_history.append(
+            HumanMessage(
+                content=f"""
+            Relevant Previous Memories:
+                {memory_context}
+
+            Current User Message:
+                {user_input.message}
+            """
+        )
+    )
+
+        response = llm_with_tools.invoke(
+            chat_history
+    )
+
+    # Store memory AFTER response exists
+        store_memory(user_input.message)
+
+        store_memory(str(response.content))
 
     except Exception as e:
 
         return {
-            "response": f"Error: {str(e)}"
-        }
+        "response": f"Error: {str(e)}"
+    }
 
     chat_history.append(response)
 

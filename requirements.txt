@@ -7,3 +7,4 @@ uvicorn
 streamlit
 tavily-python
 pypdf
+chromadb
