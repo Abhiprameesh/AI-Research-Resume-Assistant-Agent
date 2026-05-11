@@ -30,15 +30,28 @@ def chat(user_input: UserInput):
         chat_history.append(
             HumanMessage(
                 content=f"""
-                Resume Content:
+        You are an expert AI Resume Analyzer.
 
+        The user uploaded their resume.
+
+        Analyze the resume carefully and answer the user's question.
+
+        Resume Content:
                 {resume_text}
 
-                User Question:
+        User Question:
                 {user_input.message}
-                """
-            )
-        )
+
+        Give detailed resume feedback including:
+        - strengths
+        - weaknesses
+        - ATS improvements
+        - missing skills
+        - project suggestions
+        - formatting suggestions
+        """
+    )
+)
 
     else:
 
