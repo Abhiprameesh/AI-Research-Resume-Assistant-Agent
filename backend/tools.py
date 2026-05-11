@@ -3,11 +3,34 @@ import datetime
 from tavily import TavilyClient
 from dotenv import load_dotenv
 import os
+from pypdf import PdfReader
+
 load_dotenv()
 
 tavily = TavilyClient(
     api_key=os.getenv("TAVILY_API_KEY")
 )
+
+
+@tool
+def analyze_resume(file_path: str) -> str:
+    """
+    Analyze a resume PDF and provide improvement suggestions.
+    """
+
+    try:
+
+        reader = PdfReader(file_path)
+
+        resume_text = ""
+
+        for page in reader.pages:
+            resume_text += page.extract_text()
+
+        return resume_text
+
+    except Exception as e:
+        return f"Resume analysis error: {str(e)}"
 
 @tool
 def web_search(query: str) -> str:

@@ -13,21 +13,49 @@ app = FastAPI()
 
 class UserInput(BaseModel):
     message: str
+    resume_path: str | None = None
 
 @app.post("/chat")
 def chat(user_input: UserInput):
 
-    chat_history.append(
-        HumanMessage(content=user_input.message)
-    )
+    # Resume upload handling
+    if user_input.resume_path:
+
+        from tools import analyze_resume
+
+        resume_text = analyze_resume.invoke(
+            {"file_path": user_input.resume_path}
+        )
+
+        chat_history.append(
+            HumanMessage(
+                content=f"""
+                Resume Content:
+
+                {resume_text}
+
+                User Question:
+                {user_input.message}
+                """
+            )
+        )
+
+    else:
+
+        chat_history.append(
+            HumanMessage(content=user_input.message)
+        )
 
     try:
+
         response = llm_with_tools.invoke(chat_history)
 
     except Exception as e:
+
         return {
-        "response": f"Error: {str(e)}"
-    }
+            "response": f"Error: {str(e)}"
+        }
+
     chat_history.append(response)
 
     # Tool calling
@@ -57,10 +85,20 @@ def chat(user_input: UserInput):
 
         chat_history.append(final_response)
 
+        if isinstance(final_response.content, list):
+            response_text = final_response.content[0]["text"]
+        else:
+            response_text = final_response.content
+
         return {
-            "response": final_response.content
-        }
+    "response": response_text
+}
+
+    if isinstance(response.content, list):
+        response_text = response.content[0]["text"]
+    else:
+        response_text = response.content
 
     return {
-        "response": response.content
+        "response": response_text
     }
