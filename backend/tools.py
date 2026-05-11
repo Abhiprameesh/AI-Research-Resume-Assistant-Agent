@@ -1,5 +1,33 @@
 from langchain_core.tools import tool
 import datetime
+from tavily import TavilyClient
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+tavily = TavilyClient(
+    api_key=os.getenv("TAVILY_API_KEY")
+)
+
+@tool
+def web_search(query: str) -> str:
+    """Search the web for latest information."""
+
+    response = tavily.search(
+        query=query,
+        search_depth="basic",
+        max_results=3
+    )
+
+    results = []
+
+    for result in response["results"]:
+        results.append(
+            f"Title: {result['title']}\n"
+            f"Content: {result['content']}\n"
+        )
+
+    return "\n".join(results)
 
 @tool
 def get_current_time() -> str:

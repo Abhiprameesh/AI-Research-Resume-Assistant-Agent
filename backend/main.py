@@ -21,8 +21,13 @@ def chat(user_input: UserInput):
         HumanMessage(content=user_input.message)
     )
 
-    response = llm_with_tools.invoke(chat_history)
+    try:
+        response = llm_with_tools.invoke(chat_history)
 
+    except Exception as e:
+        return {
+        "response": f"Error: {str(e)}"
+    }
     chat_history.append(response)
 
     # Tool calling

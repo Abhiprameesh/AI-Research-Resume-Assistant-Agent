@@ -6,7 +6,8 @@ from tools import (
     get_current_time,
     motivational_quote,
     resume_tip,
-    generate_ml_interview_question
+    generate_ml_interview_question,
+    web_search
 )
 
 load_dotenv()
@@ -15,7 +16,8 @@ tools = [
     get_current_time,
     motivational_quote,
     resume_tip,
-    generate_ml_interview_question
+    generate_ml_interview_question,
+    web_search
 ]
 
 llm = ChatGoogleGenerativeAI(
