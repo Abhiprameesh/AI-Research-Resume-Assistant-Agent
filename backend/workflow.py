@@ -2,10 +2,7 @@ from typing import TypedDict
 
 from langgraph.graph import StateGraph, END
 
-from tools import (
-    web_search,
-    analyze_resume
-)
+from tools import web_search
 
 from agent import llm
 
@@ -13,67 +10,75 @@ from agent import llm
 class AgentState(TypedDict):
 
     user_input: str
+    plan: str
     response: str
 
-# ROUTER NODE
-def router(state: AgentState):
+# PLANNER NODE
+def planner_node(state: AgentState):
 
-    user_input = state["user_input"].lower()
+    user_input = state["user_input"]
 
-    if "resume" in user_input:
-        return "resume"
+    plan = llm.invoke(
+        f"""
+        You are an AI planner.
 
-    elif "search" in user_input \
-        or "latest" in user_input \
-        or "news" in user_input:
+        Break the user's request into logical steps.
 
-        return "search"
+        User Request:
+        {user_input}
+
+        Create a short execution plan.
+        """
+    )
+
+    return {
+        "plan": plan.content
+    }
+
+# EXECUTOR NODE
+def executor_node(state: AgentState):
+
+    user_input = state["user_input"]
+
+    plan = state["plan"]
+
+    # Decide whether search is needed
+    if "latest" in user_input.lower() \
+        or "news" in user_input.lower() \
+        or "search" in user_input.lower():
+
+        search_result = web_search.invoke(
+            {"query": user_input}
+        )
+
+        response = llm.invoke(
+            f"""
+            User Request:
+            {user_input}
+
+            Execution Plan:
+            {plan}
+
+            Web Search Results:
+            {search_result}
+
+            Generate final response.
+            """
+        )
 
     else:
-        return "general"
 
-# RESUME NODE
-def resume_node(state: AgentState):
+        response = llm.invoke(
+            f"""
+            User Request:
+            {user_input}
 
-    response = llm.invoke(
-        f"""
-        Give resume advice for:
-        {state['user_input']}
-        """
-    )
+            Execution Plan:
+            {plan}
 
-    return {
-        "response": response.content
-    }
-
-# SEARCH NODE
-def search_node(state: AgentState):
-
-    search_result = web_search.invoke(
-        {"query": state["user_input"]}
-    )
-
-    response = llm.invoke(
-        f"""
-        Based on this search result:
-
-        {search_result}
-
-        Answer the user query:
-        {state['user_input']}
-        """
-    )
-
-    return {
-        "response": response.content
-    }
-
-# GENERAL NODE
-def general_node(state: AgentState):
-
-    response = llm.invoke(
-        state["user_input"]
-    )
+            Generate final response.
+            """
+        )
 
     return {
         "response": response.content
@@ -82,29 +87,29 @@ def general_node(state: AgentState):
 # BUILD GRAPH
 graph = StateGraph(AgentState)
 
-# ADD NODES
-graph.add_node("resume", resume_node)
-
-graph.add_node("search", search_node)
-
-graph.add_node("general", general_node)
-
-# ROUTING
-graph.set_conditional_entry_point(
-    router,
-    {
-        "resume": "resume",
-        "search": "search",
-        "general": "general"
-    }
+# NODES
+graph.add_node(
+    "planner",
+    planner_node
 )
 
-# END STATES
-graph.add_edge("resume", END)
+graph.add_node(
+    "executor",
+    executor_node
+)
 
-graph.add_edge("search", END)
+# FLOW
+graph.set_entry_point("planner")
 
-graph.add_edge("general", END)
+graph.add_edge(
+    "planner",
+    "executor"
+)
+
+graph.add_edge(
+    "executor",
+    END
+)
 
 # COMPILE
 app_workflow = graph.compile()
