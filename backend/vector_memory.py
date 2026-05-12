@@ -1,23 +1,40 @@
 import chromadb
 
-client = chromadb.Client()
+# Persistent ChromaDB client
+client = chromadb.PersistentClient(
+    path="./chroma_db"
+)
 
-collection = client.create_collection(
+# Create or load collection
+collection = client.get_or_create_collection(
     name="chat_memory"
 )
 
+# Store memory
 def store_memory(text):
 
-    collection.add(
-        documents=[text],
-        ids=[str(hash(text))]
-    )
+    try:
 
+        collection.add(
+            documents=[text],
+            ids=[str(hash(text))]
+        )
+
+    except:
+        pass
+
+# Retrieve memory
 def retrieve_memory(query):
 
-    results = collection.query(
-        query_texts=[query],
-        n_results=2
-    )
+    try:
 
-    return results["documents"][0]
+        results = collection.query(
+            query_texts=[query],
+            n_results=2
+        )
+
+        return results["documents"][0]
+
+    except:
+
+        return []

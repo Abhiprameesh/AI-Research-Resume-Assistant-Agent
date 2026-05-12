@@ -10,6 +10,7 @@ from agent import llm
 class AgentState(TypedDict):
 
     user_input: str
+    resume_text: str
     plan: str
     response: str
 
@@ -53,6 +54,10 @@ import json
 def executor_node(state: AgentState):
 
     user_input = state["user_input"]
+    resume_text = state.get(
+    "resume_text",
+    ""
+)
 
     plan = state["plan"]
 
@@ -83,19 +88,22 @@ def executor_node(state: AgentState):
         )
 
     response = llm.invoke(
-        f"""
-        User Request:
-        {user_input}
+    f"""
+    User Request:
+    {user_input}
 
-        Execution Plan:
-        {parsed_plan}
+    Resume Context:
+    {resume_text}
 
-        Search Results:
-        {search_result}
+    Execution Plan:
+    {plan}
 
-        Generate a final helpful response.
-        """
-    )
+    If resume context exists,
+    analyze the user's resume properly.
+
+    Generate final helpful response.
+    """
+)
 
     return {
         "response": response.content

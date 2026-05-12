@@ -1,158 +1,111 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from workflow import app_workflow
 
-from langchain_core.messages import (
-    HumanMessage,
-    ToolMessage
-)
+from workflow import app_workflow
 
 from vector_memory import (
     store_memory,
     retrieve_memory
 )
 
-from agent import llm_with_tools, tools
-from memory import chat_history
+from profile_memory import (
+    save_profile,
+    load_profile
+)
 
 app = FastAPI()
 
+# INPUT MODEL
 class UserInput(BaseModel):
+
     message: str
     resume_path: str | None = None
 
+# CHAT ENDPOINT
 @app.post("/chat")
 def chat(user_input: UserInput):
 
-    # Resume upload handling
-    if user_input.resume_path:
-
-        from tools import analyze_resume
-
-        resume_text = analyze_resume.invoke(
-            {"file_path": user_input.resume_path}
-        )
-
-        chat_history.append(
-            HumanMessage(
-                content=f"""
-        You are an expert AI Resume Analyzer.
-
-        The user uploaded their resume.
-
-        Analyze the resume carefully and answer the user's question.
-
-        Resume Content:
-                {resume_text}
-
-        User Question:
-                {user_input.message}
-
-        Give detailed resume feedback including:
-        - strengths
-        - weaknesses
-        - ATS improvements
-        - missing skills
-        - project suggestions
-        - formatting suggestions
-        """
-    )
-)
-
-    else:
-
-        chat_history.append(
-            HumanMessage(content=user_input.message)
-        )
-
     try:
 
+        # Load persistent user profile
+        profile_data = load_profile()
+
+        # Retrieve semantic memories
         relevant_memories = retrieve_memory(
             user_input.message
-    )
+        )
 
         memory_context = "\n".join(
             relevant_memories
-    )
+        )
 
-        chat_history.append(
-            HumanMessage(
-                content=f"""
-            Relevant Previous Memories:
+        memory_context = f"""
+        These are important memories from previous conversations:
+
+        {memory_context}
+
+        Use them only if relevant.
+        """
+
+        # Resume handling
+        resume_text = ""
+
+        if user_input.resume_path:
+
+            from tools import analyze_resume
+
+            resume_text = analyze_resume.invoke(
+                {
+                    "file_path": user_input.resume_path
+                }
+            )
+
+            # Update persistent profile
+            profile_data["resume_uploaded"] = True
+
+            profile_data["career_interest"] = (
+                "AI Research Internships"
+            )
+
+            save_profile(profile_data)
+
+        # Run LangGraph workflow
+        workflow_result = app_workflow.invoke(
+            {
+                "user_input": f"""
+                User Profile:
+                {profile_data}
+
+                Previous Relevant Memories:
                 {memory_context}
 
-            Current User Message:
+                Current User Message:
                 {user_input.message}
-            """
-        )
-    )
+                """,
 
-        workflow_result = app_workflow.invoke(
-    {
-        "user_input": user_input.message
-    }
-)
+                "resume_text": resume_text
+            }
+        )
 
         response_text = workflow_result["response"]
 
+        # Store important semantic memory
+        important_memory = f"""
+        User Query:
+        {user_input.message}
+
+        AI Response:
+        {response_text}
+        """
+
+        store_memory(important_memory)
+
         return {
-    "response": response_text
-}
-
-    # Store memory AFTER response exists
-        store_memory(user_input.message)
-
-        store_memory(str(response.content))
+            "response": response_text
+        }
 
     except Exception as e:
 
         return {
-        "response": f"Error: {str(e)}"
-    }
-
-    chat_history.append(response)
-
-    # Tool calling
-    if response.tool_calls:
-
-        for tool_call in response.tool_calls:
-
-            tool_name = tool_call["name"]
-
-            selected_tool = next(
-                tool for tool in tools
-                if tool.name == tool_name
-            )
-
-            tool_result = selected_tool.invoke(
-                tool_call["args"]
-            )
-
-            tool_message = ToolMessage(
-                content=str(tool_result),
-                tool_call_id=tool_call["id"]
-            )
-
-            chat_history.append(tool_message)
-
-        final_response = llm_with_tools.invoke(chat_history)
-
-        chat_history.append(final_response)
-
-        if isinstance(final_response.content, list):
-            response_text = final_response.content[0]["text"]
-        else:
-            response_text = final_response.content
-
-        return {
-    "response": response_text
-}
-
-    if isinstance(response.content, list):
-        response_text = response.content[0]["text"]
-    else:
-        response_text = response.content
-
-    return {
-        "response": response_text
-    }
+            "response": f"Error: {str(e)}"
+        }
