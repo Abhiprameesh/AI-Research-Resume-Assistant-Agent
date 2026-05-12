@@ -18,72 +18,88 @@ def planner_node(state: AgentState):
 
     user_input = state["user_input"]
 
-    plan = llm.invoke(
+    response = llm.invoke(
         f"""
         You are an AI planner.
 
-        Break the user's request into logical steps.
+        Analyze the user request and return ONLY valid JSON.
+
+        JSON format:
+
+        {{
+            "goal": "...",
+            "steps": [
+                "...",
+                "..."
+            ],
+            "tools_needed": [
+                "...",
+                "..."
+            ]
+        }}
 
         User Request:
         {user_input}
-
-        Create a short execution plan.
         """
     )
 
     return {
-        "plan": plan.content
+        "plan": response.content
     }
 
 # EXECUTOR NODE
+import json
+
 def executor_node(state: AgentState):
 
     user_input = state["user_input"]
 
     plan = state["plan"]
 
-    # Decide whether search is needed
-    if "latest" in user_input.lower() \
-        or "news" in user_input.lower() \
-        or "search" in user_input.lower():
+    try:
+
+        parsed_plan = json.loads(plan)
+
+    except:
+
+        parsed_plan = {
+            "goal": user_input,
+            "steps": [],
+            "tools_needed": []
+        }
+
+    tools_needed = parsed_plan.get(
+        "tools_needed",
+        []
+    )
+
+    search_result = ""
+
+    # Use web search if needed
+    if "web_search" in tools_needed:
 
         search_result = web_search.invoke(
             {"query": user_input}
         )
 
-        response = llm.invoke(
-            f"""
-            User Request:
-            {user_input}
+    response = llm.invoke(
+        f"""
+        User Request:
+        {user_input}
 
-            Execution Plan:
-            {plan}
+        Execution Plan:
+        {parsed_plan}
 
-            Web Search Results:
-            {search_result}
+        Search Results:
+        {search_result}
 
-            Generate final response.
-            """
-        )
-
-    else:
-
-        response = llm.invoke(
-            f"""
-            User Request:
-            {user_input}
-
-            Execution Plan:
-            {plan}
-
-            Generate final response.
-            """
-        )
+        Generate a final helpful response.
+        """
+    )
 
     return {
         "response": response.content
     }
-
 # BUILD GRAPH
 graph = StateGraph(AgentState)
 
