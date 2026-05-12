@@ -8,3 +8,4 @@ streamlit
 tavily-python
 pypdf
 chromadb
+langgraph

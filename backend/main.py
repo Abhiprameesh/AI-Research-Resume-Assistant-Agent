@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from workflow import app_workflow
 
 from langchain_core.messages import (
     HumanMessage,
@@ -86,9 +87,17 @@ def chat(user_input: UserInput):
         )
     )
 
-        response = llm_with_tools.invoke(
-            chat_history
-    )
+        workflow_result = app_workflow.invoke(
+    {
+        "user_input": user_input.message
+    }
+)
+
+        response_text = workflow_result["response"]
+
+        return {
+    "response": response_text
+}
 
     # Store memory AFTER response exists
         store_memory(user_input.message)
