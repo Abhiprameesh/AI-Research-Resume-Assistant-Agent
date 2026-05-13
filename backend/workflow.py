@@ -1,10 +1,19 @@
 from typing import TypedDict
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import (
+    StateGraph,
+    END
+)
+
+import json
 
 from tools import web_search
 
 from agent import llm
+
+from research_agent import (
+    retrieve_research_context
+)
 
 # STATE
 class AgentState(TypedDict):
@@ -13,6 +22,7 @@ class AgentState(TypedDict):
     resume_text: str
     plan: str
     response: str
+
 
 # PLANNER NODE
 def planner_node(state: AgentState):
@@ -48,19 +58,20 @@ def planner_node(state: AgentState):
         "plan": response.content
     }
 
-# EXECUTOR NODE
-import json
 
+# EXECUTOR NODE
 def executor_node(state: AgentState):
 
     user_input = state["user_input"]
+
     resume_text = state.get(
-    "resume_text",
-    ""
-)
+        "resume_text",
+        ""
+    )
 
     plan = state["plan"]
 
+    # Parse planner output
     try:
 
         parsed_plan = json.loads(plan)
@@ -78,40 +89,83 @@ def executor_node(state: AgentState):
         []
     )
 
+    # Web Search
     search_result = ""
 
-    # Use web search if needed
     if "web_search" in tools_needed:
 
-        search_result = web_search.invoke(
-            {"query": user_input}
+        try:
+
+            search_result = web_search.invoke(
+                {"query": user_input}
+            )
+
+        except:
+
+            search_result = ""
+
+    # Research Paper Retrieval
+    research_context = ""
+
+    try:
+
+        research_chunks = retrieve_research_context(
+            user_input
         )
 
+        research_context = "\n".join(
+            research_chunks
+        )
+
+    except:
+
+        research_context = ""
+
+    # Final LLM Response
     response = llm.invoke(
-    f"""
-    User Request:
-    {user_input}
+        f"""
+        User Request:
+        {user_input}
 
-    Resume Context:
-    {resume_text}
+        Resume Context:
+        {resume_text}
 
-    Execution Plan:
-    {plan}
+        Research Paper Context:
+        {research_context}
 
-    If resume context exists,
-    analyze the user's resume properly.
+        Execution Plan:
+        {plan}
 
-    Generate final helpful response.
-    """
-)
+        Search Results:
+        {search_result}
+
+        Use the Research Paper Context heavily
+        when answering research-related questions.
+
+        If research context exists:
+        - summarize the paper
+        - explain methodology
+        - explain architecture
+        - explain findings clearly
+
+        If resume context exists:
+        - analyze the resume properly
+        - give ATS suggestions
+        - suggest improvements
+
+        Generate a detailed helpful response.
+        """
+    )
 
     return {
         "response": response.content
     }
+
+
 # BUILD GRAPH
 graph = StateGraph(AgentState)
 
-# NODES
+# ADD NODES
 graph.add_node(
     "planner",
     planner_node
