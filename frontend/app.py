@@ -15,7 +15,7 @@ if "messages" not in st.session_state:
 
 # Upload resume
 uploaded_file = st.file_uploader(
-    "Upload Resume (PDF)",
+    "Upload PDF (Resume or Research Paper)",
     type=["pdf"]
 )
 

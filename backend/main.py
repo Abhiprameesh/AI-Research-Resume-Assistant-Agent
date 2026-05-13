@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from research_agent import store_research_paper
 from workflow import app_workflow
 
 from vector_memory import (
@@ -51,6 +52,20 @@ def chat(user_input: UserInput):
         resume_text = ""
 
         if user_input.resume_path:
+            from research_agent import (
+                store_research_paper
+        )
+
+# Store research paper embeddings
+            try:
+
+                store_research_paper(
+        user_input.resume_path
+                 )
+
+            except:
+                pass
+            
 
             from tools import analyze_resume
 
