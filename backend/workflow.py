@@ -73,8 +73,17 @@ def executor_node(state: AgentState):
 
     # Parse planner output
     try:
-
-        parsed_plan = json.loads(plan)
+        
+        # Clean potential markdown formatting (e.g. ```json ... ```)
+        cleaned_plan = plan.strip()
+        if cleaned_plan.startswith("```json"):
+            cleaned_plan = cleaned_plan[7:]
+        elif cleaned_plan.startswith("```"):
+            cleaned_plan = cleaned_plan[3:]
+        if cleaned_plan.endswith("```"):
+            cleaned_plan = cleaned_plan[:-3]
+        
+        parsed_plan = json.loads(cleaned_plan.strip())
 
     except:
 

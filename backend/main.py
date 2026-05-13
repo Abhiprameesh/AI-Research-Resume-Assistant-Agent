@@ -21,6 +21,7 @@ class UserInput(BaseModel):
 
     message: str
     resume_path: str | None = None
+    doc_type: str = "Resume"
 
 # CHAT ENDPOINT
 @app.post("/chat")
@@ -48,41 +49,34 @@ def chat(user_input: UserInput):
         Use them only if relevant.
         """
 
-        # Resume handling
+        # Document handling
         resume_text = ""
 
         if user_input.resume_path:
-            from research_agent import (
-                store_research_paper
-        )
-
-# Store research paper embeddings
-            try:
-
-                store_research_paper(
-        user_input.resume_path
-                 )
-
-            except:
-                pass
             
+            if user_input.doc_type == "Research Paper":
+                # Store research paper embeddings only
+                try:
+                    store_research_paper(user_input.resume_path)
+                except:
+                    pass
+            else:
+                # Store resume embeddings (optional) and extract text
+                try:
+                    store_research_paper(user_input.resume_path)
+                except:
+                    pass
+                
+                from tools import analyze_resume
 
-            from tools import analyze_resume
+                resume_text = analyze_resume.invoke(
+                    {"file_path": user_input.resume_path}
+                )
 
-            resume_text = analyze_resume.invoke(
-                {
-                    "file_path": user_input.resume_path
-                }
-            )
-
-            # Update persistent profile
-            profile_data["resume_uploaded"] = True
-
-            profile_data["career_interest"] = (
-                "AI Research Internships"
-            )
-
-            save_profile(profile_data)
+                # Update persistent profile
+                profile_data["resume_uploaded"] = True
+                profile_data["career_interest"] = "AI Research Internships"
+                save_profile(profile_data)
 
         # Run LangGraph workflow
         workflow_result = app_workflow.invoke(

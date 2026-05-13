@@ -8,6 +8,4 @@ streamlit
 tavily-python
 pypdf
 chromadb
-langgraph
 sentence-transformers
-pypdf
