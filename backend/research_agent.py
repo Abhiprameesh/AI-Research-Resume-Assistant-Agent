@@ -32,7 +32,6 @@ def extract_pdf_text(file_path):
         text += page.extract_text()
 
     return text
-
 # Chunk text
 def chunk_text(text, chunk_size=500):
 
