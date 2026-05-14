@@ -1,47 +1,57 @@
 from agent import llm
 
-from research_agent import (
-    retrieve_research_context
+from agent_memory import (
+    store_agent_memory,
+    retrieve_agent_memory
 )
 
 def research_agent(user_input):
 
-    research_context = ""
+    # RETRIEVE MEMORY
+    memories = retrieve_agent_memory(
+        "research",
+        user_input
+    )
 
-    try:
-
-        chunks = retrieve_research_context(
-            user_input
-        )
-
-        research_context = "\n".join(
-            chunks
-        )
-
-    except:
-
-        research_context = ""
+    memory_context = "\n".join(
+        memories
+    )
 
     response = llm.invoke(
         f"""
-        You are an AI Research Assistant.
+        You are an AI Career Mentor.
 
-        Research Context:
-        {research_context}
+        Previous Career Memories:
+        {memory_context}
 
         User Request:
         {user_input}
 
         Responsibilities:
-        - summarize papers
-        - explain methodologies
-        - explain architectures
-        - simplify concepts
-        - explain findings
-        - answer research questions
+        - AI/ML career guidance
+        - internship advice
+        - roadmap creation
+        - learning strategies
+        - project guidance
 
-        Give detailed research-focused answers.
+        Use previous memories if relevant.
+
+        Give practical personalized advice.
         """
+    )
+
+    # STORE MEMORY
+    important_memory = f"""
+    User:
+    {user_input}
+
+    AI:
+    {response.content}
+    """
+
+    store_agent_memory(
+        "research",
+        important_memory
     )
 
     return response.content

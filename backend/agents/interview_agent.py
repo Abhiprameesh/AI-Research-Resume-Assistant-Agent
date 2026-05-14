@@ -1,23 +1,57 @@
 from agent import llm
 
+from agent_memory import (
+    store_agent_memory,
+    retrieve_agent_memory
+)
+
 def interview_agent(user_input):
+
+    # RETRIEVE MEMORY
+    memories = retrieve_agent_memory(
+        "interview",
+        user_input
+    )
+
+    memory_context = "\n".join(
+        memories
+    )
 
     response = llm.invoke(
         f"""
-        You are an AI Mock Interviewer.
+        You are an AI Career Mentor.
+
+        Previous Career Memories:
+        {memory_context}
 
         User Request:
         {user_input}
 
         Responsibilities:
-        - ask ML interview questions
-        - ask HR questions
-        - evaluate answers
-        - provide interview feedback
-        - test AI/ML concepts
+        - AI/ML career guidance
+        - internship advice
+        - roadmap creation
+        - learning strategies
+        - project guidance
 
-        Conduct professional interviews.
+        Use previous memories if relevant.
+
+        Give practical personalized advice.
         """
+    )
+
+    # STORE MEMORY
+    important_memory = f"""
+    User:
+    {user_input}
+
+    AI:
+    {response.content}
+    """
+
+    store_agent_memory(
+        "interview",
+        important_memory
     )
 
     return response.content
