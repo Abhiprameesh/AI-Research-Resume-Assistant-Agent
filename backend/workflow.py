@@ -5,14 +5,27 @@ from langgraph.graph import (
     END
 )
 
-import json
-
-from tools import web_search
-
 from agent import llm
 
-from research_agent import (
-    retrieve_research_context
+# AGENTS
+from agents.router_agent import (
+    router_agent
+)
+
+from agents.resume_agent import (
+    resume_agent
+)
+
+from agents.research_agent_node import (
+    research_agent
+)
+
+from agents.career_agent import (
+    career_agent
+)
+
+from agents.interview_agent import (
+    interview_agent
 )
 
 # STATE
@@ -20,7 +33,6 @@ class AgentState(TypedDict):
 
     user_input: str
     resume_text: str
-    plan: str
     response: str
 
 
@@ -33,21 +45,12 @@ def planner_node(state: AgentState):
         f"""
         You are an AI planner.
 
-        Analyze the user request and return ONLY valid JSON.
+        Understand the user's request carefully.
 
-        JSON format:
-
-        {{
-            "goal": "...",
-            "steps": [
-                "...",
-                "..."
-            ],
-            "tools_needed": [
-                "...",
-                "..."
-            ]
-        }}
+        Briefly analyze:
+        - what the user wants
+        - what type of task it is
+        - which specialized agent may help
 
         User Request:
         {user_input}
@@ -55,7 +58,7 @@ def planner_node(state: AgentState):
     )
 
     return {
-        "plan": response.content
+        "response": response.content
     }
 
 
@@ -69,105 +72,42 @@ def executor_node(state: AgentState):
         ""
     )
 
-    plan = state["plan"]
-
-    # Parse planner output
-    try:
-        
-        # Clean potential markdown formatting (e.g. ```json ... ```)
-        cleaned_plan = plan.strip()
-        if cleaned_plan.startswith("```json"):
-            cleaned_plan = cleaned_plan[7:]
-        elif cleaned_plan.startswith("```"):
-            cleaned_plan = cleaned_plan[3:]
-        if cleaned_plan.endswith("```"):
-            cleaned_plan = cleaned_plan[:-3]
-        
-        parsed_plan = json.loads(cleaned_plan.strip())
-
-    except:
-
-        parsed_plan = {
-            "goal": user_input,
-            "steps": [],
-            "tools_needed": []
-        }
-
-    tools_needed = parsed_plan.get(
-        "tools_needed",
-        []
+    # ROUTER DECISION
+    selected_agent = router_agent(
+        user_input
     )
 
-    # Web Search
-    search_result = ""
+    # RESUME AGENT
+    if "resume" in selected_agent:
 
-    if "web_search" in tools_needed:
+        response = resume_agent(
+            user_input,
+            resume_text
+        )
 
-        try:
+    # RESEARCH AGENT
+    elif "research" in selected_agent:
 
-            search_result = web_search.invoke(
-                {"query": user_input}
-            )
-
-        except:
-
-            search_result = ""
-
-    # Research Paper Retrieval
-    research_context = ""
-
-    try:
-
-        research_chunks = retrieve_research_context(
+        response = research_agent(
             user_input
         )
 
-        research_context = "\n".join(
-            research_chunks
+    # INTERVIEW AGENT
+    elif "interview" in selected_agent:
+
+        response = interview_agent(
+            user_input
         )
 
-    except:
+    # DEFAULT → CAREER AGENT
+    else:
 
-        research_context = ""
-
-    # Final LLM Response
-    response = llm.invoke(
-        f"""
-        User Request:
-        {user_input}
-
-        Resume Context:
-        {resume_text}
-
-        Research Paper Context:
-        {research_context}
-
-        Execution Plan:
-        {plan}
-
-        Search Results:
-        {search_result}
-
-        Use the Research Paper Context heavily
-        when answering research-related questions.
-
-        If research context exists:
-        - summarize the paper
-        - explain methodology
-        - explain architecture
-        - explain findings clearly
-
-        If resume context exists:
-        - analyze the resume properly
-        - give ATS suggestions
-        - suggest improvements
-
-        Generate a detailed helpful response.
-        """
-    )
+        response = career_agent(
+            user_input
+        )
 
     return {
-        "response": response.content
+        "response": response
     }
 
 
