@@ -1,6 +1,6 @@
-# AI Research & Resume Assistant Agent
+# AgentForge-AI
 
-Welcome to the **AI Research & Resume Assistant Agent**, an intelligent application designed to help users analyze resumes, search for career opportunities, and explore AI research contexts using state-of-the-art Generative AI technologies.
+Welcome to **AgentForge-AI**, an intelligent application designed to help users analyze resumes, search for career opportunities, and explore AI research contexts using state-of-the-art Generative AI technologies.
 
 This project is divided into a **FastAPI backend** and a **Streamlit frontend**, utilizing **LangChain**, **LangGraph**, and **ChromaDB** to orchestrate an Agentic AI workflow with vector-based memory capabilities.
 
@@ -20,7 +20,7 @@ This project is divided into a **FastAPI backend** and a **Streamlit frontend**,
 ## 📂 Project Structure
 
 ```text
-AI Research & Resume Assistant Agent/
+AgentForge-AI/
 │
 ├── backend/                  # FastAPI Backend Server
 │   ├── .env                  # Environment variables
