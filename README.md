@@ -55,6 +55,10 @@ Ensure you have **Python 3.10+** installed. You will also need API keys for:
 Clone the repository, create a virtual environment, and install dependencies:
 
 ```bash
+# Clone the repository
+git clone https://github.com/Abhiprameesh/AgentForge-AI.git
+cd AgentForge-AI
+
 # Create virtual environment
 python -m venv .venv
 
