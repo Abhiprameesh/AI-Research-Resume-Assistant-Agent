@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import os
+from datetime import datetime
 
 # PAGE CONFIG
 st.set_page_config(
@@ -123,6 +124,14 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
 
         st.markdown(message["content"])
+        
+        if "chunks" in message and message["chunks"]:
+            with st.expander("📚 Source Citations"):
+                for idx, chunk in enumerate(message["chunks"]):
+                    st.markdown(f"**Source {idx+1}**\n\n{chunk}")
+                    
+        if "timestamp" in message:
+            st.caption(f"_{message['timestamp']}_")
 
 # CHAT INPUT
 user_input = st.chat_input(
@@ -132,16 +141,20 @@ user_input = st.chat_input(
 # USER MESSAGE
 if user_input:
 
+    current_time = datetime.now().strftime("%I:%M %p")
+
     st.session_state.messages.append(
         {
             "role": "user",
-            "content": user_input
+            "content": user_input,
+            "timestamp": current_time
         }
     )
 
     with st.chat_message("user"):
 
         st.markdown(user_input)
+        st.caption(f"_{current_time}_")
 
     payload = {
         "message": user_input,
@@ -156,7 +169,7 @@ if user_input:
                 os.path.dirname(__file__),
                 "..",
                 "backend",
-                "uploaded_resume.pdf"
+                "uploaded_document.pdf"
             )
         )
 
@@ -169,7 +182,8 @@ if user_input:
         payload["resume_path"] = save_path
 
     # BACKEND REQUEST
-    with st.spinner("🤖 Agent is thinking..."):
+    spinner_msg = "🧠 Research Agent analyzing paper..." if doc_type == "Research Paper" else "📄 Resume Agent reviewing ATS score..."
+    with st.spinner(spinner_msg):
 
         try:
 
@@ -204,14 +218,26 @@ if user_input:
             """
 
     # SAVE ASSISTANT MESSAGE
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": agent_response
-        }
-    )
+    assistant_time = datetime.now().strftime("%I:%M %p")
+    assistant_msg = {
+        "role": "assistant",
+        "content": agent_response,
+        "timestamp": assistant_time
+    }
+    
+    if st.session_state.retrieved_chunks:
+        assistant_msg["chunks"] = st.session_state.retrieved_chunks
+        
+    st.session_state.messages.append(assistant_msg)
 
     # DISPLAY RESPONSE
     with st.chat_message("assistant"):
 
         st.markdown(agent_response)
+        
+        if st.session_state.retrieved_chunks:
+            with st.expander("📚 Source Citations"):
+                for idx, chunk in enumerate(st.session_state.retrieved_chunks):
+                    st.markdown(f"**Source {idx+1}**\n\n{chunk}")
+                    
+        st.caption(f"_{assistant_time}_")

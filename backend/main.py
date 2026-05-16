@@ -110,7 +110,9 @@ def chat(user_input: UserInput):
         store_memory(important_memory)
 
         return {
-            "response": response_text
+            "response": response_text,
+            "selected_agent": workflow_result.get("selected_agent", "Unknown"),
+            "retrieved_chunks": workflow_result.get("retrieved_chunks", [])
         }
 
     except Exception as e:

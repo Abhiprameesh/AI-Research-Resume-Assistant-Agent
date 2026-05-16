@@ -13,6 +13,7 @@ This project is divided into a **FastAPI backend** and a **Streamlit frontend**,
 - **Research Paper Embedding**: Upload research papers which are processed, chunked, and embedded into a local ChromaDB for semantic retrieval.
 - **Contextual Memory**: Keeps track of user profiles and stores important semantic memory from conversations.
 - **Web Search Integration**: Capable of dynamically searching the web for real-time information using Tavily.
+- **Agent Observability**: Transparently view the active specialized agent handling your request and inspect retrieved research context chunks directly in the UI.
 - **Interactive UI**: Clean, responsive frontend built with Streamlit for a seamless user experience.
 
 ---
@@ -125,6 +126,7 @@ The system operates on a dual-node LangGraph architecture, separating the "think
   - **Research Memory (ChromaDB)**: Finds relevant semantic chunks from uploaded research papers using SentenceTransformers.
 - Manually invokes external tools (like Tavily web search) if specified in the plan.
 - Passes all gathered context, tools outputs, and parsed resume text to the final LLM (Google Gemini) to synthesize a comprehensive, highly personalized response.
+- Outputs observability data (e.g., the selected specialized agent and retrieved chunks) back to the frontend for UI transparency.
 
 This agentic approach ensures the AI doesn't just respond blindly, but actively plans its reasoning and retrieves necessary context before generating an answer.
 
