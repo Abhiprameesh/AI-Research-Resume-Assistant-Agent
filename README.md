@@ -88,7 +88,7 @@ You will need two terminal windows to run both the backend and frontend simultan
 **Terminal 1: Start the FastAPI Backend**
 ```bash
 cd backend
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload 
 ```
 
 **Terminal 2: Start the Streamlit Frontend**
