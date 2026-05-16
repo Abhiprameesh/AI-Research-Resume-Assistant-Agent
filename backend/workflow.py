@@ -35,6 +35,10 @@ class AgentState(TypedDict):
     resume_text: str
     response: str
 
+    selected_agent: str
+    retrieved_memories: list
+    retrieved_chunks: list
+
 
 # PLANNER NODE
 def planner_node(state: AgentState):
@@ -77,6 +81,11 @@ def executor_node(state: AgentState):
         user_input
     )
 
+    # OBSERVABILITY VARIABLES
+    retrieved_memories = []
+
+    retrieved_chunks = []
+
     # RESUME AGENT
     if "resume" in selected_agent:
 
@@ -88,8 +97,9 @@ def executor_node(state: AgentState):
     # RESEARCH AGENT
     elif "research" in selected_agent:
 
-        response = research_agent(
-            user_input
+        response, retrieved_chunks = research_agent(
+            user_input,
+            return_chunks=True
         )
 
     # INTERVIEW AGENT
@@ -107,7 +117,10 @@ def executor_node(state: AgentState):
         )
 
     return {
-        "response": response
+        "response": response,
+        "selected_agent": selected_agent,
+        "retrieved_memories": retrieved_memories,
+        "retrieved_chunks": retrieved_chunks
     }
 
 
