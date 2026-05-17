@@ -131,3 +131,30 @@ The system operates on a dual-node LangGraph architecture, separating the "think
 This agentic approach ensures the AI doesn't just respond blindly, but actively plans its reasoning and retrieves necessary context before generating an answer.
 
 ---
+
+
+## 💡 Usage Guide
+
+1. **Start the Application**: Ensure both the FastAPI backend and Streamlit frontend are running.
+2. **Upload Documents**: Use the sidebar to upload a PDF resume or a research paper. Wait for the success message confirming the document has been embedded.
+3. **Interact with the AI**:
+   - Ask career-related questions: *"Based on my uploaded resume, what roles am I best suited for?"*
+   - Query research papers: *"What are the key findings of the uploaded paper?"*
+   - General queries: *"Can you search the web for the latest AI trends?"*
+4. **Observe the Agent**: Watch the UI to see which specialized agent is handling your request and what context it is pulling from your uploaded documents.
+
+---
+
+## 🛠️ Troubleshooting
+
+- **Stale Context / Memory Issues**: If the agent is recalling old or incorrect information, you can clear the local memory by deleting the `backend/chroma_db` and `backend/research_db` directories. Restart the backend server, and the database will be freshly initialized.
+- **API Key Errors**: Ensure that your `.env` file in the `backend` folder contains valid API keys for Google Gemini and Tavily.
+
+---
+
+## 🛣️ Roadmap / Future Enhancements
+
+- [ ] **Multi-Format Document Support**: Expand ingestion to support `.docx`, `.txt`, and web URLs.
+- [ ] **Advanced Token Management**: Implement conversational memory truncation to optimize context limits and cost.
+- [ ] **Multi-LLM Support**: Introduce the ability to easily toggle between different LLM providers (e.g., Anthropic Claude, OpenAI).
+- [ ] **Extended Agent Capabilities**: Add more specialized tools for the executor node (e.g., code execution, GitHub repository analysis).
